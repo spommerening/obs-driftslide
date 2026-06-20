@@ -30,7 +30,8 @@ bool obs_module_load(void)
 {
 	driftslide_info.id = "driftslide_source";
 	driftslide_info.type = OBS_SOURCE_TYPE_INPUT;
-	driftslide_info.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB | OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CUSTOM_DRAW;
+	driftslide_info.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB | OBS_SOURCE_DO_NOT_DUPLICATE |
+				       OBS_SOURCE_CUSTOM_DRAW;
 	driftslide_info.get_name = [](void *) -> const char * {
 		return "DriftSlide";
 	};

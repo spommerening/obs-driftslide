@@ -278,7 +278,7 @@ void driftslide_video_render(void *data, gs_effect_t * /*effect*/)
 	gs_eparam_t *p_t = gs_effect_get_param_by_name(eff, "t");
 	gs_eparam_t *p_tt = gs_effect_get_param_by_name(eff, "transition_type");
 
-	gs_effect_set_texture_srgb(p_image, tex);
+	gs_effect_set_texture(p_image, tex);
 	gs_effect_set_float(p_t, t);
 	gs_effect_set_int(p_tt, static_cast<int>(ctx->transition_type));
 
