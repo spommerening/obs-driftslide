@@ -1,0 +1,53 @@
+uniform texture2d image;
+uniform float     t;
+uniform int       transition_type;
+
+sampler_state def_sampler {
+	Filter   = Linear;
+	AddressU = Clamp;
+	AddressV = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+	VertData vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSTransition(VertData v_in) : TARGET
+{
+	float2 uv = v_in.uv;
+
+	// Slide offset: image enters from outside the viewport at t=0, settles at t=1
+	if (transition_type == 1)
+		uv.x -= (1.0 - t); // Slide-Left  (enters from right)
+	if (transition_type == 2)
+		uv.x += (1.0 - t); // Slide-Right (enters from left)
+	if (transition_type == 3)
+		uv.y -= (1.0 - t); // Slide-Up    (enters from bottom)
+	if (transition_type == 4)
+		uv.y += (1.0 - t); // Slide-Down  (enters from top)
+
+	if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
+		return float4(0.0, 0.0, 0.0, 0.0);
+
+	// Image is loaded with GS_IMAGE_ALPHA_PREMULTIPLY_SRGB, so multiply all
+	// channels by t to fade correctly with ONE/INVSRCALPHA blending.
+	float4 col = image.Sample(def_sampler, uv);
+	col *= t;
+	return col;
+}
+
+technique Draw {
+	pass {
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSTransition(v_in);
+	}
+}
