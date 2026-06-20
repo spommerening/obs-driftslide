@@ -97,24 +97,20 @@ void *driftslide_create(obs_data_t *settings, obs_source_t *source)
 	// Apply initial settings synchronously (render thread not yet running)
 	ctx->directory = obs_data_get_string(settings, "image_directory");
 	ctx->random_order = (obs_data_get_int(settings, "image_order") == 1);
-	ctx->transparent_dur =
-		std::max((float)obs_data_get_double(settings, "transparent_duration"), 0.1f);
-	ctx->display_dur =
-		std::max((float)obs_data_get_double(settings, "display_duration"), 0.1f);
-	ctx->transition_dur =
-		std::max((float)obs_data_get_double(settings, "transition_duration"), 0.0f);
-	ctx->transition_type =
-		static_cast<TransitionType>(obs_data_get_int(settings, "transition_type"));
+	ctx->transparent_dur = std::max((float)obs_data_get_double(settings, "transparent_duration"), 0.1f);
+	ctx->display_dur = std::max((float)obs_data_get_double(settings, "display_duration"), 0.1f);
+	ctx->transition_dur = std::max((float)obs_data_get_double(settings, "transition_duration"), 0.0f);
+	ctx->transition_type = static_cast<TransitionType>(obs_data_get_int(settings, "transition_type"));
 
 	ctx->image_list = std::make_unique<ImageList>(ctx->directory, ctx->random_order);
 
 	// Mirror to pending so the first update() sees no change
-	ctx->pending_dir    = ctx->directory;
+	ctx->pending_dir = ctx->directory;
 	ctx->pending_random = ctx->random_order;
-	ctx->pending_tdur   = ctx->transparent_dur;
-	ctx->pending_ddur   = ctx->display_dur;
-	ctx->pending_trdur  = ctx->transition_dur;
-	ctx->pending_ttype  = ctx->transition_type;
+	ctx->pending_tdur = ctx->transparent_dur;
+	ctx->pending_ddur = ctx->display_dur;
+	ctx->pending_trdur = ctx->transition_dur;
+	ctx->pending_ttype = ctx->transition_type;
 
 	return ctx;
 }
@@ -138,12 +134,12 @@ void driftslide_update(void *data, obs_data_t *settings)
 	auto *ctx = static_cast<DriftSlideSource *>(data);
 
 	std::lock_guard<std::mutex> lock(ctx->settings_mutex);
-	ctx->pending_dir    = obs_data_get_string(settings, "image_directory");
+	ctx->pending_dir = obs_data_get_string(settings, "image_directory");
 	ctx->pending_random = (obs_data_get_int(settings, "image_order") == 1);
-	ctx->pending_tdur   = (float)obs_data_get_double(settings, "transparent_duration");
-	ctx->pending_ddur   = (float)obs_data_get_double(settings, "display_duration");
-	ctx->pending_trdur  = (float)obs_data_get_double(settings, "transition_duration");
-	ctx->pending_ttype  = static_cast<TransitionType>(obs_data_get_int(settings, "transition_type"));
+	ctx->pending_tdur = (float)obs_data_get_double(settings, "transparent_duration");
+	ctx->pending_ddur = (float)obs_data_get_double(settings, "display_duration");
+	ctx->pending_trdur = (float)obs_data_get_double(settings, "transition_duration");
+	ctx->pending_ttype = static_cast<TransitionType>(obs_data_get_int(settings, "transition_type"));
 	ctx->settings_dirty = true;
 }
 
@@ -161,26 +157,23 @@ obs_properties_t *driftslide_get_properties(void * /*data*/)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_properties_add_path(props, "image_directory", obs_module_text("Directory"),
-				OBS_PATH_DIRECTORY, nullptr, nullptr);
+	obs_properties_add_path(props, "image_directory", obs_module_text("Directory"), OBS_PATH_DIRECTORY, nullptr,
+				nullptr);
 
-	obs_property_t *order = obs_properties_add_list(props, "image_order",
-							obs_module_text("ImageOrder"),
+	obs_property_t *order = obs_properties_add_list(props, "image_order", obs_module_text("ImageOrder"),
 							OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(order, obs_module_text("Alphabetic"), 0);
 	obs_property_list_add_int(order, obs_module_text("Random"), 1);
 
-	obs_properties_add_float_slider(props, "transparent_duration",
-					obs_module_text("TransparentDuration"), 1.0, 3600.0, 1.0);
+	obs_properties_add_float_slider(props, "transparent_duration", obs_module_text("TransparentDuration"), 1.0,
+					3600.0, 1.0);
 
-	obs_properties_add_float_slider(props, "display_duration",
-					obs_module_text("DisplayDuration"), 1.0, 300.0, 1.0);
+	obs_properties_add_float_slider(props, "display_duration", obs_module_text("DisplayDuration"), 1.0, 300.0, 1.0);
 
-	obs_properties_add_float_slider(props, "transition_duration",
-					obs_module_text("TransitionDuration"), 0.1, 10.0, 0.1);
+	obs_properties_add_float_slider(props, "transition_duration", obs_module_text("TransitionDuration"), 0.1, 10.0,
+					0.1);
 
-	obs_property_t *tt = obs_properties_add_list(props, "transition_type",
-						     obs_module_text("TransitionType"),
+	obs_property_t *tt = obs_properties_add_list(props, "transition_type", obs_module_text("TransitionType"),
 						     OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(tt, obs_module_text("Fade"), 0);
 	obs_property_list_add_int(tt, obs_module_text("SlideLeft"), 1);
@@ -202,20 +195,19 @@ void driftslide_video_tick(void *data, float seconds)
 			bool dir_changed = (ctx->directory != ctx->pending_dir) ||
 					   (ctx->random_order != ctx->pending_random);
 
-			ctx->directory      = ctx->pending_dir;
-			ctx->random_order   = ctx->pending_random;
+			ctx->directory = ctx->pending_dir;
+			ctx->random_order = ctx->pending_random;
 			ctx->transparent_dur = std::max(ctx->pending_tdur, 0.1f);
-			ctx->display_dur    = std::max(ctx->pending_ddur, 0.1f);
+			ctx->display_dur = std::max(ctx->pending_ddur, 0.1f);
 			ctx->transition_dur = std::max(ctx->pending_trdur, 0.0f);
 			ctx->transition_type = ctx->pending_ttype;
 			ctx->settings_dirty = false;
 
 			if (dir_changed) {
 				unload_texture(ctx);
-				ctx->state       = DSState::Transparent;
+				ctx->state = DSState::Transparent;
 				ctx->state_timer = 0.0f;
-				ctx->image_list  = std::make_unique<ImageList>(ctx->directory,
-									       ctx->random_order);
+				ctx->image_list = std::make_unique<ImageList>(ctx->directory, ctx->random_order);
 			}
 		}
 	}
@@ -240,14 +232,14 @@ void driftslide_video_tick(void *data, float seconds)
 	case DSState::FadeIn:
 		if (ctx->state_timer >= ctx->transition_dur) {
 			ctx->state_timer = 0.0f;
-			ctx->state       = DSState::Displaying;
+			ctx->state = DSState::Displaying;
 		}
 		break;
 
 	case DSState::Displaying:
 		if (ctx->state_timer >= ctx->display_dur) {
 			ctx->state_timer = 0.0f;
-			ctx->state       = DSState::FadeOut;
+			ctx->state = DSState::FadeOut;
 		}
 		break;
 
@@ -279,8 +271,8 @@ void driftslide_video_render(void *data, gs_effect_t * /*effect*/)
 	float t = compute_t(ctx);
 
 	gs_eparam_t *p_image = gs_effect_get_param_by_name(eff, "image");
-	gs_eparam_t *p_t     = gs_effect_get_param_by_name(eff, "t");
-	gs_eparam_t *p_tt    = gs_effect_get_param_by_name(eff, "transition_type");
+	gs_eparam_t *p_t = gs_effect_get_param_by_name(eff, "t");
+	gs_eparam_t *p_tt = gs_effect_get_param_by_name(eff, "transition_type");
 
 	gs_effect_set_texture_srgb(p_image, tex);
 	gs_effect_set_float(p_t, t);

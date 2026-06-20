@@ -68,6 +68,6 @@ void ImageList::scan(const std::string &dir)
 void ImageList::shuffle()
 {
 	static std::random_device rd;
-	static std::mt19937       rng(rd());
+	static std::mt19937 rng(rd());
 	std::shuffle(paths_.begin(), paths_.end(), rng);
 }

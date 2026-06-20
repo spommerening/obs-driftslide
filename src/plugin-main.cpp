@@ -28,20 +28,22 @@ static struct obs_source_info driftslide_info = {};
 
 bool obs_module_load(void)
 {
-	driftslide_info.id           = "driftslide_source";
-	driftslide_info.type         = OBS_SOURCE_TYPE_INPUT;
+	driftslide_info.id = "driftslide_source";
+	driftslide_info.type = OBS_SOURCE_TYPE_INPUT;
 	driftslide_info.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB | OBS_SOURCE_DO_NOT_DUPLICATE;
-	driftslide_info.get_name     = [](void *) -> const char * { return "DriftSlide"; };
-	driftslide_info.create          = driftslide_create;
-	driftslide_info.destroy         = driftslide_destroy;
-	driftslide_info.update          = driftslide_update;
-	driftslide_info.get_defaults    = driftslide_get_defaults;
-	driftslide_info.get_properties  = driftslide_get_properties;
-	driftslide_info.video_tick      = driftslide_video_tick;
-	driftslide_info.video_render    = driftslide_video_render;
-	driftslide_info.get_width       = driftslide_get_width;
-	driftslide_info.get_height      = driftslide_get_height;
-	driftslide_info.icon_type       = OBS_ICON_TYPE_SLIDESHOW;
+	driftslide_info.get_name = [](void *) -> const char * {
+		return "DriftSlide";
+	};
+	driftslide_info.create = driftslide_create;
+	driftslide_info.destroy = driftslide_destroy;
+	driftslide_info.update = driftslide_update;
+	driftslide_info.get_defaults = driftslide_get_defaults;
+	driftslide_info.get_properties = driftslide_get_properties;
+	driftslide_info.video_tick = driftslide_video_tick;
+	driftslide_info.video_render = driftslide_video_render;
+	driftslide_info.get_width = driftslide_get_width;
+	driftslide_info.get_height = driftslide_get_height;
+	driftslide_info.icon_type = OBS_ICON_TYPE_SLIDESHOW;
 	obs_register_source(&driftslide_info);
 
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);

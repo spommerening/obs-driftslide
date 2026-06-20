@@ -13,8 +13,8 @@ public:
 
 private:
 	std::vector<std::string> paths_;
-	int                      cursor_ = 0;
-	bool                     random_;
+	int cursor_ = 0;
+	bool random_;
 
 	void scan(const std::string &dir);
 	void shuffle();
