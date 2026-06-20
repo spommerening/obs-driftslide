@@ -58,7 +58,7 @@ void ImageList::scan(const std::string &dir)
 
 		for (const char *valid : IMAGE_EXTS) {
 			if (ext == valid) {
-				paths_.push_back(entry.path().string());
+				paths_.push_back(entry.path().u8string());
 				break;
 			}
 		}

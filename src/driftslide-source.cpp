@@ -103,6 +103,8 @@ void *driftslide_create(obs_data_t *settings, obs_source_t *source)
 	ctx->transition_type = static_cast<TransitionType>(obs_data_get_int(settings, "transition_type"));
 
 	ctx->image_list = std::make_unique<ImageList>(ctx->directory, ctx->random_order);
+	obs_log(LOG_INFO, "driftslide: scanned '%s', found %d image(s)", ctx->directory.c_str(),
+		ctx->image_list->size());
 
 	// Mirror to pending so the first update() sees no change
 	ctx->pending_dir = ctx->directory;
@@ -208,6 +210,8 @@ void driftslide_video_tick(void *data, float seconds)
 				ctx->state = DSState::Transparent;
 				ctx->state_timer = 0.0f;
 				ctx->image_list = std::make_unique<ImageList>(ctx->directory, ctx->random_order);
+				obs_log(LOG_INFO, "driftslide: scanned '%s', found %d image(s)", ctx->directory.c_str(),
+					ctx->image_list->size());
 			}
 		}
 	}

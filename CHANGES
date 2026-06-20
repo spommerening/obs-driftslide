@@ -1,0 +1,25 @@
+DriftSlide — Change Log
+=======================
+
+0.1.0 (unreleased)
+-------------------
+Initial release.
+
+* OBS source plugin ("DriftSlide") registering as OBS_SOURCE_TYPE_INPUT.
+* 4-state display cycle: Transparent → Fade In → Displaying → Fade Out.
+* Configurable durations: transparent gap (1–3600 s), display (1–300 s),
+  transition (0.1–10 s).
+* Five transition styles: Fade, Slide Left, Slide Right, Slide Up, Slide Down.
+* Directory scan with case-insensitive extension matching for PNG, JPEG, BMP,
+  TGA, WebP, and GIF files.
+* Alphabetic and random (Fisher-Yates shuffle) image ordering.
+* Thread-safe settings handoff from UI thread to render thread via a
+  pending-values / dirty-flag pattern.
+* Premultiplied SRGB image loading and correct blend mode
+  (GS_BLEND_ONE / GS_BLEND_INVSRCALPHA).
+* Smooth easing via smoothstep on all transitions.
+* Zero pixel output during the transparent interval — no black frames composited
+  into the scene.
+* UTF-8 path encoding when passing file paths to OBS image loader (fixes image
+  discovery on Windows for directories with non-ASCII characters).
+* Scan result logged to the OBS log at INFO level to aid debugging.
