@@ -31,7 +31,7 @@ src/
 
 data/
   locale/en-US.ini       # All UI strings (fallback locale; OBS falls back here for any language)
-  effects/driftslide.effect  # GLSL effect: Fade + SlideLeft/Right/Up/Down transitions
+  effects/driftslide.effect  # OBS effect (HLSL on D3D11 / GLSL on OpenGL): Fade + SlideLeft/Right/Up/Down transitions
 
 buildspec.json           # Single source of truth for plugin name, version, author, OBS SDK version
 ```
@@ -65,11 +65,23 @@ Settings are transferred via a pending-values pattern:
 
 ## Render Pipeline
 
-- Images are loaded as premultiplied SRGB (`GS_IMAGE_ALPHA_PREMULTIPLY_SRGB`).
+- Images are loaded as premultiplied SRGB (`GS_IMAGE_ALPHA_PREMULTIPLY_SRGB`), which converts
+  pixels to linear light and premultiplies alpha in linear space. The resulting GPU texture holds
+  linear values.
 - The custom effect (`data/effects/driftslide.effect`) multiplies all channels by `t` (`col *= t`)
   — correct for premultiplied textures.
+- The effect declares `uniform float4x4 ViewProj` explicitly. The OpenGL backend injects this
+  automatically; the D3D11/HLSL compiler requires an explicit declaration.
+- Textures are bound with `gs_effect_set_texture` (not `_srgb`). Because
+  `GS_IMAGE_ALPHA_PREMULTIPLY_SRGB` already produced a linear texture, using the `_srgb` variant
+  would apply a second sRGB→linear decode and make images appear too dark.
+- `OBS_SOURCE_CUSTOM_DRAW` is set in `output_flags` so OBS does not activate its own default
+  effect before calling `video_render`. Without it, calling `gs_effect_loop` on the plugin's custom
+  effect while OBS's effect is already active produces a `gs_effect_loop: An effect is already
+  active` error and no rendering.
+- `OBS_SOURCE_SRGB` is set in `output_flags` so OBS applies correct linear→sRGB conversion when
+  compositing the source.
 - Blend mode: `GS_BLEND_ONE, GS_BLEND_INVSRCALPHA` (premultiplied alpha compositing).
-- `OBS_SOURCE_SRGB` is set in `output_flags` so OBS applies correct SRGB compositing.
 - For Fade (transition_type 0): no UV offset, pure alpha fade.
 - For Slide variants: UV is offset by `(1.0 - t)` in the relevant axis; pixels outside [0,1] UV
   return `float4(0,0,0,0)` (transparent).

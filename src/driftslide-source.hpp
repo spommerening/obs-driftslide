@@ -17,6 +17,11 @@ enum class TransitionType {
 	SlideRight,
 	SlideUp,
 	SlideDown,
+	Zoom,
+	ScrollLeft,
+	ScrollRight,
+	ScrollUp,
+	ScrollDown,
 };
 
 struct DriftSlideSource {

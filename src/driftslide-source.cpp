@@ -182,6 +182,11 @@ obs_properties_t *driftslide_get_properties(void * /*data*/)
 	obs_property_list_add_int(tt, obs_module_text("SlideRight"), 2);
 	obs_property_list_add_int(tt, obs_module_text("SlideUp"), 3);
 	obs_property_list_add_int(tt, obs_module_text("SlideDown"), 4);
+	obs_property_list_add_int(tt, obs_module_text("Zoom"), 5);
+	obs_property_list_add_int(tt, obs_module_text("ScrollLeft"), 6);
+	obs_property_list_add_int(tt, obs_module_text("ScrollRight"), 7);
+	obs_property_list_add_int(tt, obs_module_text("ScrollUp"), 8);
+	obs_property_list_add_int(tt, obs_module_text("ScrollDown"), 9);
 
 	return props;
 }
@@ -277,10 +282,12 @@ void driftslide_video_render(void *data, gs_effect_t * /*effect*/)
 	gs_eparam_t *p_image = gs_effect_get_param_by_name(eff, "image");
 	gs_eparam_t *p_t = gs_effect_get_param_by_name(eff, "t");
 	gs_eparam_t *p_tt = gs_effect_get_param_by_name(eff, "transition_type");
+	gs_eparam_t *p_fo = gs_effect_get_param_by_name(eff, "is_fading_out");
 
 	gs_effect_set_texture(p_image, tex);
 	gs_effect_set_float(p_t, t);
 	gs_effect_set_int(p_tt, static_cast<int>(ctx->transition_type));
+	gs_effect_set_bool(p_fo, ctx->state == DSState::FadeOut);
 
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);

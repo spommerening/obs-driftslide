@@ -17,6 +17,13 @@ Initial release.
   pending-values / dirty-flag pattern.
 * Premultiplied SRGB image loading and correct blend mode
   (GS_BLEND_ONE / GS_BLEND_INVSRCALPHA).
+* Explicit ViewProj uniform declaration in the OBS effect file, required by
+  the D3D11/HLSL compiler on Windows (OpenGL injects it automatically).
+* OBS_SOURCE_CUSTOM_DRAW added to output_flags so the plugin's custom effect
+  does not conflict with OBS's own default effect on the render thread.
+* Texture bound with gs_effect_set_texture (not _srgb) to avoid a second
+  sRGB→linear decode on already-linear premultiplied texture data, which
+  caused images to appear too dark on Windows.
 * Smooth easing via smoothstep on all transitions.
 * Zero pixel output during the transparent interval — no black frames composited
   into the scene.

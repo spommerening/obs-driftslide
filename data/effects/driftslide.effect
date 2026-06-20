@@ -2,6 +2,7 @@ uniform float4x4  ViewProj;
 uniform texture2d image;
 uniform float     t;
 uniform int       transition_type;
+uniform bool      is_fading_out;
 
 sampler_state def_sampler {
 	Filter   = Linear;
@@ -26,15 +27,47 @@ float4 PSTransition(VertData v_in) : TARGET
 {
 	float2 uv = v_in.uv;
 
-	// Slide offset: image enters from outside the viewport at t=0, settles at t=1
+	// Slide: bounces back — enters and exits on the same side
 	if (transition_type == 1)
-		uv.x -= (1.0 - t); // Slide-Left  (enters from right)
+		uv.x -= (1.0 - t); // Slide Left  (enters from right, exits to right)
 	if (transition_type == 2)
-		uv.x += (1.0 - t); // Slide-Right (enters from left)
+		uv.x += (1.0 - t); // Slide Right (enters from left,  exits to left)
 	if (transition_type == 3)
-		uv.y -= (1.0 - t); // Slide-Up    (enters from bottom)
+		uv.y -= (1.0 - t); // Slide Up    (enters from bottom, exits to bottom)
 	if (transition_type == 4)
-		uv.y += (1.0 - t); // Slide-Down  (enters from top)
+		uv.y += (1.0 - t); // Slide Down  (enters from top,   exits to top)
+
+	// Zoom: starts zoomed in and settles to normal size
+	if (transition_type == 5) {
+		float zoom = 0.6 + t * 0.4;
+		uv = (uv - 0.5) * zoom + 0.5;
+	}
+
+	// Scroll: continuous flow — enters and exits in the same direction
+	if (transition_type == 6) { // Scroll Left  (enters from right, exits to left)
+		if (is_fading_out)
+			uv.x += (1.0 - t);
+		else
+			uv.x -= (1.0 - t);
+	}
+	if (transition_type == 7) { // Scroll Right (enters from left,  exits to right)
+		if (is_fading_out)
+			uv.x -= (1.0 - t);
+		else
+			uv.x += (1.0 - t);
+	}
+	if (transition_type == 8) { // Scroll Up    (enters from bottom, exits to top)
+		if (is_fading_out)
+			uv.y += (1.0 - t);
+		else
+			uv.y -= (1.0 - t);
+	}
+	if (transition_type == 9) { // Scroll Down  (enters from top,   exits to bottom)
+		if (is_fading_out)
+			uv.y -= (1.0 - t);
+		else
+			uv.y += (1.0 - t);
+	}
 
 	if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
 		return float4(0.0, 0.0, 0.0, 0.0);
