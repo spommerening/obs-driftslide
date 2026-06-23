@@ -33,13 +33,13 @@
     },
     "platformConfig": {
         "macos": {
-            "bundleId": "com.example.driftslide"
+            "bundleId": "de.dmsp.driftslide"
         }
     },
     "name": "driftslide",
     "displayName": "DriftSlide",
     "version": "1.0.0",
     "author": "Stefan Pommerening",
-    "website": "https://example.com",
+    "website": "https://github.com/spommerening/obs-driftslide",
     "email": ""
 }
