@@ -3,6 +3,10 @@
 An OBS Studio source plugin that fades images from a directory into your stream — one at a time,
 on a loop, with smooth transitions. Set it, forget it, and let your visuals breathe.
 
+![DriftSlide settings panel](assets/driftslide-menu1.gif)
+
+▶ [Watch a demo on my PeerTube](https://peertube.wumato.de/w/jGrdL38i6Bqzfwy6CJPQTr) — the plugin shows a random game-related image every 5 minutes
+
 ---
 
 ## What it does
@@ -69,8 +73,9 @@ at the centre outward.
 
 ## Installing on Windows
 
-**Confirmed working on OBS 32.1.2.** Get the latest `.dll` from
-[GitHub Actions → Artifacts](#building-on-windows-via-ci) and place the three files exactly here:
+**Confirmed working on OBS 32.1.2.** Download the latest release from the
+[Releases page](https://github.com/spommerening/obs-driftslide/releases/latest) and place the
+three files exactly here:
 
 ```
 C:\ProgramData\obs-studio\plugins\driftslide\bin\64bit\driftslide.dll
@@ -238,8 +243,8 @@ new CI build.
   image files (PNG, JPEG, BMP, TGA, WebP, GIF).
 - Check Transparent Duration — with the default of 30 s you may simply be waiting for the first
   cycle to complete.
-- On Windows, directory paths that contain non-ASCII characters (accented letters, etc.) require
-  build 0.1.0 or later.
+- On Windows, directory paths that contain non-ASCII characters (accented letters, etc.) are
+  supported.
 
 ---
 

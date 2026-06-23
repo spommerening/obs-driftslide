@@ -1,7 +1,7 @@
 DriftSlide — Change Log
 =======================
 
-0.1.0 (unreleased)
+1.0.0 (unreleased)
 -------------------
 Initial release.
 
@@ -9,7 +9,16 @@ Initial release.
 * 4-state display cycle: Transparent → Fade In → Displaying → Fade Out.
 * Configurable durations: transparent gap (1–3600 s), display (1–300 s),
   transition (0.1–10 s).
-* Five transition styles: Fade, Slide Left, Slide Right, Slide Up, Slide Down.
+* Eleven transition styles across three families:
+  - Fade: pure alpha dissolve.
+  - Slide Left / Right / Up / Down: image enters from one edge and exits
+    back the same side.
+  - Scroll Left / Right / Up / Down: continuous flow — image enters from
+    one edge and exits the opposite side.
+  - Zoom: image starts at 1.67× crop and settles to full size.
+  - Zoom In: image grows from a single point at the centre outward.
+* Ken Burns mode: gentle slow pan and zoom throughout each image's entire
+  visible lifetime, with randomised direction per image.
 * Directory scan with case-insensitive extension matching for PNG, JPEG, BMP,
   TGA, WebP, and GIF files.
 * Alphabetic and random (Fisher-Yates shuffle) image ordering.
