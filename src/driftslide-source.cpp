@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstring>
 #include <mutex>
+#include <random>
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -57,6 +58,24 @@ static void load_next_image(DriftSlideSource *ctx)
 	}
 
 	obs_leave_graphics();
+
+	// Randomise Ken Burns parameters for this image's visible lifetime
+	static std::mt19937 rng{std::random_device{}()};
+	std::uniform_real_distribution<float> pan_dist(-0.03f, 0.03f);
+	std::uniform_int_distribution<int> zoom_coin(0, 1);
+	if (zoom_coin(rng)) {
+		ctx->kb_start_zoom = 1.0f;
+		ctx->kb_end_zoom = 1.1f;
+	} else {
+		ctx->kb_start_zoom = 1.1f;
+		ctx->kb_end_zoom = 1.0f;
+	}
+	ctx->kb_start_pan_x = pan_dist(rng);
+	ctx->kb_start_pan_y = pan_dist(rng);
+	ctx->kb_end_pan_x = pan_dist(rng);
+	ctx->kb_end_pan_y = pan_dist(rng);
+	ctx->kb_elapsed = 0.0f;
+	ctx->kb_total_dur = 2.0f * ctx->transition_dur + ctx->display_dur;
 }
 
 static float compute_t(DriftSlideSource *ctx)
@@ -101,6 +120,7 @@ void *driftslide_create(obs_data_t *settings, obs_source_t *source)
 	ctx->display_dur = std::max((float)obs_data_get_double(settings, "display_duration"), 0.1f);
 	ctx->transition_dur = std::max((float)obs_data_get_double(settings, "transition_duration"), 0.0f);
 	ctx->transition_type = static_cast<TransitionType>(obs_data_get_int(settings, "transition_type"));
+	ctx->ken_burns_enabled = obs_data_get_bool(settings, "ken_burns");
 
 	ctx->image_list = std::make_unique<ImageList>(ctx->directory, ctx->random_order);
 	obs_log(LOG_INFO, "driftslide: scanned '%s', found %d image(s)", ctx->directory.c_str(),
@@ -113,6 +133,7 @@ void *driftslide_create(obs_data_t *settings, obs_source_t *source)
 	ctx->pending_ddur = ctx->display_dur;
 	ctx->pending_trdur = ctx->transition_dur;
 	ctx->pending_ttype = ctx->transition_type;
+	ctx->pending_ken_burns = ctx->ken_burns_enabled;
 
 	return ctx;
 }
@@ -142,6 +163,7 @@ void driftslide_update(void *data, obs_data_t *settings)
 	ctx->pending_ddur = (float)obs_data_get_double(settings, "display_duration");
 	ctx->pending_trdur = (float)obs_data_get_double(settings, "transition_duration");
 	ctx->pending_ttype = static_cast<TransitionType>(obs_data_get_int(settings, "transition_type"));
+	ctx->pending_ken_burns = obs_data_get_bool(settings, "ken_burns");
 	ctx->settings_dirty = true;
 }
 
@@ -153,6 +175,7 @@ void driftslide_get_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, "display_duration", 15.0);
 	obs_data_set_default_double(settings, "transition_duration", 2.0);
 	obs_data_set_default_int(settings, "transition_type", 0);
+	obs_data_set_default_bool(settings, "ken_burns", false);
 }
 
 obs_properties_t *driftslide_get_properties(void * /*data*/)
@@ -187,6 +210,9 @@ obs_properties_t *driftslide_get_properties(void * /*data*/)
 	obs_property_list_add_int(tt, obs_module_text("ScrollRight"), 7);
 	obs_property_list_add_int(tt, obs_module_text("ScrollUp"), 8);
 	obs_property_list_add_int(tt, obs_module_text("ScrollDown"), 9);
+	obs_property_list_add_int(tt, obs_module_text("ZoomIn"), 10);
+
+	obs_properties_add_bool(props, "ken_burns", obs_module_text("KenBurns"));
 
 	return props;
 }
@@ -208,6 +234,7 @@ void driftslide_video_tick(void *data, float seconds)
 			ctx->display_dur = std::max(ctx->pending_ddur, 0.1f);
 			ctx->transition_dur = std::max(ctx->pending_trdur, 0.0f);
 			ctx->transition_type = ctx->pending_ttype;
+			ctx->ken_burns_enabled = ctx->pending_ken_burns;
 			ctx->settings_dirty = false;
 
 			if (dir_changed) {
@@ -222,6 +249,8 @@ void driftslide_video_tick(void *data, float seconds)
 	}
 
 	ctx->state_timer += seconds;
+	if (ctx->texture_loaded)
+		ctx->kb_elapsed = std::min(ctx->kb_elapsed + seconds, ctx->kb_total_dur);
 
 	switch (ctx->state) {
 	case DSState::Transparent:
@@ -283,11 +312,28 @@ void driftslide_video_render(void *data, gs_effect_t * /*effect*/)
 	gs_eparam_t *p_t = gs_effect_get_param_by_name(eff, "t");
 	gs_eparam_t *p_tt = gs_effect_get_param_by_name(eff, "transition_type");
 	gs_eparam_t *p_fo = gs_effect_get_param_by_name(eff, "is_fading_out");
+	gs_eparam_t *p_kb_zoom = gs_effect_get_param_by_name(eff, "kb_zoom");
+	gs_eparam_t *p_kb_pan_x = gs_effect_get_param_by_name(eff, "kb_pan_x");
+	gs_eparam_t *p_kb_pan_y = gs_effect_get_param_by_name(eff, "kb_pan_y");
+
+	float kb_zoom_val = 1.0f;
+	float kb_pan_x_val = 0.0f;
+	float kb_pan_y_val = 0.0f;
+	if (ctx->ken_burns_enabled && ctx->kb_total_dur > 0.001f) {
+		float raw = std::clamp(ctx->kb_elapsed / ctx->kb_total_dur, 0.0f, 1.0f);
+		float smooth = raw * raw * (3.0f - 2.0f * raw);
+		kb_zoom_val = ctx->kb_start_zoom + (ctx->kb_end_zoom - ctx->kb_start_zoom) * smooth;
+		kb_pan_x_val = ctx->kb_start_pan_x + (ctx->kb_end_pan_x - ctx->kb_start_pan_x) * smooth;
+		kb_pan_y_val = ctx->kb_start_pan_y + (ctx->kb_end_pan_y - ctx->kb_start_pan_y) * smooth;
+	}
 
 	gs_effect_set_texture(p_image, tex);
 	gs_effect_set_float(p_t, t);
 	gs_effect_set_int(p_tt, static_cast<int>(ctx->transition_type));
 	gs_effect_set_bool(p_fo, ctx->state == DSState::FadeOut);
+	gs_effect_set_float(p_kb_zoom, kb_zoom_val);
+	gs_effect_set_float(p_kb_pan_x, kb_pan_x_val);
+	gs_effect_set_float(p_kb_pan_y, kb_pan_y_val);
 
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);

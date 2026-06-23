@@ -31,7 +31,7 @@ src/
 
 data/
   locale/en-US.ini       # All UI strings (fallback locale; OBS falls back here for any language)
-  effects/driftslide.effect  # OBS effect (HLSL on D3D11 / GLSL on OpenGL): Fade + SlideLeft/Right/Up/Down transitions
+  effects/driftslide.effect  # OBS effect (HLSL on D3D11 / GLSL on OpenGL): all transition types + Ken Burns
 
 buildspec.json           # Single source of truth for plugin name, version, author, OBS SDK version
 ```
@@ -48,10 +48,12 @@ FADE_OUT    ──(transition_duration elapsed)───► TRANSPARENT  (advanc
 ```
 
 - **TRANSPARENT**: returns immediately from `video_render` — zero pixel output, fully transparent.
-- **FADE_IN / FADE_OUT**: smoothstep-eased alpha (and UV offset for slide transitions).
+- **FADE_IN / FADE_OUT**: smoothstep-eased alpha (and UV offset for slide/scroll/zoom transitions).
 - **DISPLAYING**: renders the image at full opacity.
 - Images are loaded with `gs_image_file4_init(..., GS_IMAGE_ALPHA_PREMULTIPLY_SRGB)` and freed
   between display cycles to avoid holding GPU memory during the transparent interval.
+- The Ken Burns `kb_elapsed` timer advances throughout FADE_IN, DISPLAYING, and FADE_OUT; it is
+  reset and re-randomised each time a new image is loaded.
 
 ## Thread Safety
 
@@ -82,9 +84,16 @@ Settings are transferred via a pending-values pattern:
 - `OBS_SOURCE_SRGB` is set in `output_flags` so OBS applies correct linear→sRGB conversion when
   compositing the source.
 - Blend mode: `GS_BLEND_ONE, GS_BLEND_INVSRCALPHA` (premultiplied alpha compositing).
-- For Fade (transition_type 0): no UV offset, pure alpha fade.
-- For Slide variants: UV is offset by `(1.0 - t)` in the relevant axis; pixels outside [0,1] UV
-  return `float4(0,0,0,0)` (transparent).
+- For Fade (0): no UV offset, pure alpha fade.
+- For Slide (1–4): UV is offset by `(1.0 - t)` in the relevant axis; bounces back on the same side.
+- For Zoom (5): UV scaled by `0.6 + t*0.4` around the centre — starts 1.67× cropped, settles to full.
+- For Scroll (6–9): same entry direction as the corresponding Slide, but exits the opposite side.
+  Requires `uniform bool is_fading_out` to reverse the offset direction on exit.
+- For Zoom In (10): UV divided by `max(t, 0.001)` around the centre — image grows from a point.
+- Pixels with UV outside [0,1] after transition offsets return `float4(0,0,0,0)` (transparent).
+- Ken Burns (applied after the bounds check): `uv = (uv - 0.5) * (1.0/kb_zoom) + 0.5 + float2(kb_pan_x, kb_pan_y)`.
+  `kb_zoom` ∈ [1.0, 1.1], pan ∈ [−0.03, 0.03] per axis, randomised per image, eased with smoothstep.
+  When Ken Burns is disabled, C++ passes kb_zoom=1.0, kb_pan_x=0, kb_pan_y=0 (shader no-op).
 
 ## Settings
 
@@ -95,7 +104,8 @@ Settings are transferred via a pending-values pattern:
 | `transparent_duration` | double (s) | 30.0 | 1–3600 |
 | `display_duration` | double (s) | 15.0 | 1–300 |
 | `transition_duration` | double (s) | 2.0 | 0.1–10 |
-| `transition_type` | int (0–4) | 0 | Fade/SlideLeft/Right/Up/Down |
+| `transition_type` | int (0–10) | 0 | Fade/SlideLeft/Right/Up/Down/Zoom/ScrollLeft/Right/Up/Down/ZoomIn |
+| `ken_burns` | bool | false | slow pan + zoom throughout each image's visible lifetime |
 
 ## Build
 

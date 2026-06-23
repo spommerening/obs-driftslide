@@ -11,8 +11,18 @@ DriftSlide registers as a standard OBS input source. Add it to any scene and poi
 of images. It will cycle through them automatically: each image fades in, holds for a configurable
 duration, then fades out — leaving a fully transparent gap before the next one appears.
 
-Five transition styles are available: **Fade**, **Slide Left**, **Slide Right**, **Slide Up**,
-**Slide Down**. All transitions use smoothstep easing for a polished, broadcast-quality feel.
+Eleven transition styles are available across three families:
+
+- **Fade** — pure alpha dissolve.
+- **Slide** Left / Right / Up / Down — image enters from one edge and bounces back out the same side.
+- **Scroll** Left / Right / Up / Down — continuous flow: the image enters from one edge and exits the opposite.
+- **Zoom** — image starts cropped at 1.67× and settles to full size.
+- **Zoom In** — image scales up from a point at the centre.
+
+An optional **Ken Burns** mode adds a gentle slow pan and zoom throughout each image's entire
+visible lifetime (fade-in through fade-out), with a randomised direction per image.
+
+All transitions use smoothstep easing for a polished, broadcast-quality feel.
 Images play in alphabetic order or in a randomised shuffle.
 
 **Typical use cases:** artwork rotators, sponsor loops, ambient backgrounds, intermission slides,
@@ -46,10 +56,14 @@ immediately after FADE OUT, so no VRAM is held during the transparent gap.
 | Transparent Duration | 30 s | 1–3600 s | Time between images (fully invisible) |
 | Display Duration | 15 s | 1–300 s | How long each image is fully visible |
 | Transition Duration | 2 s | 0.1–10 s | Fade-in and fade-out duration (each) |
-| Transition Type | Fade | Fade / Slide Left / Slide Right / Slide Up / Slide Down | Transition style |
+| Transition Type | Fade | Fade / Slide Left / Slide Right / Slide Up / Slide Down / Zoom / Scroll Left / Scroll Right / Scroll Up / Scroll Down / Zoom In | Transition style |
+| Ken Burns | Off | On / Off | Slow pan + zoom throughout each image's visible lifetime |
 
-Slide transitions enter from the opposite edge: Slide Left enters from the right, Slide Right from
-the left, Slide Up from the bottom, Slide Down from the top.
+**Slide** transitions enter from the opposite edge and exit back the same way (Slide Left enters
+from the right). **Scroll** transitions are the continuous-flow variant: the image enters from one
+side and exits the other (Scroll Left enters from the right and exits to the left). **Zoom** starts
+the image at 1.67× crop and settles to full size. **Zoom In** grows the image from a single point
+at the centre outward.
 
 ---
 

@@ -3,6 +3,9 @@ uniform texture2d image;
 uniform float     t;
 uniform int       transition_type;
 uniform bool      is_fading_out;
+uniform float     kb_zoom;
+uniform float     kb_pan_x;
+uniform float     kb_pan_y;
 
 sampler_state def_sampler {
 	Filter   = Linear;
@@ -37,7 +40,7 @@ float4 PSTransition(VertData v_in) : TARGET
 	if (transition_type == 4)
 		uv.y += (1.0 - t); // Slide Down  (enters from top,   exits to top)
 
-	// Zoom: starts zoomed in and settles to normal size
+	// Zoom: starts zoomed in (1.67x) and settles to normal size
 	if (transition_type == 5) {
 		float zoom = 0.6 + t * 0.4;
 		uv = (uv - 0.5) * zoom + 0.5;
@@ -69,8 +72,18 @@ float4 PSTransition(VertData v_in) : TARGET
 			uv.y += (1.0 - t);
 	}
 
+	// Zoom In: image scales up from a point at the center
+	if (transition_type == 10) {
+		uv = (uv - 0.5) / max(t, 0.001) + 0.5;
+	}
+
+	// Slides, scrolls, and zoom-in push pixels outside [0,1]; those areas are transparent
 	if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
 		return float4(0.0, 0.0, 0.0, 0.0);
+
+	// Ken Burns: slow pan and zoom applied on top of the transition
+	// kb_zoom > 1 crops to the center (zoomed-in look); kb_pan shifts the crop window
+	uv = (uv - 0.5) * (1.0 / kb_zoom) + 0.5 + float2(kb_pan_x, kb_pan_y);
 
 	// Image is loaded with GS_IMAGE_ALPHA_PREMULTIPLY_SRGB, so multiply all
 	// channels by t to fade correctly with ONE/INVSRCALPHA blending.

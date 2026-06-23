@@ -22,6 +22,7 @@ enum class TransitionType {
 	ScrollRight,
 	ScrollUp,
 	ScrollDown,
+	ZoomIn,
 };
 
 struct DriftSlideSource {
@@ -36,6 +37,7 @@ struct DriftSlideSource {
 	float pending_ddur = 15.0f;
 	float pending_trdur = 2.0f;
 	TransitionType pending_ttype = TransitionType::Fade;
+	bool pending_ken_burns = false;
 
 	// Active settings – render/tick thread only (no lock needed after copy)
 	std::string directory;
@@ -44,10 +46,21 @@ struct DriftSlideSource {
 	float display_dur = 15.0f;
 	float transition_dur = 2.0f;
 	TransitionType transition_type = TransitionType::Fade;
+	bool ken_burns_enabled = false;
 
 	// State machine – render/tick thread only
 	DSState state = DSState::Transparent;
 	float state_timer = 0.0f;
+
+	// Ken Burns per-image animation state – render/tick thread only
+	float kb_elapsed = 0.0f;
+	float kb_total_dur = 0.0f;
+	float kb_start_zoom = 1.0f;
+	float kb_end_zoom = 1.1f;
+	float kb_start_pan_x = 0.0f;
+	float kb_start_pan_y = 0.0f;
+	float kb_end_pan_x = 0.0f;
+	float kb_end_pan_y = 0.0f;
 
 	// Image list – render/tick thread only
 	std::unique_ptr<ImageList> image_list;
